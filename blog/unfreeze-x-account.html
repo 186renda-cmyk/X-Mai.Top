@@ -99,6 +99,7 @@
 <nav class="hidden md:flex items-center gap-8">
 <a class="text-sm font-medium text-gray-300 hover:text-white hover:scale-105 transition-all" href="/#accounts">账号选购</a>
 <a class="text-sm font-medium text-gray-300 hover:text-white hover:scale-105 transition-all" href="/#apps">客户端/APP</a>
+<a class="text-sm font-medium text-gray-300 hover:text-white hover:scale-105 transition-all" href="/blog/">博客专栏</a>
 <a class="text-sm font-medium text-gray-300 hover:text-white hover:scale-105 transition-all" href="/#reviews">用户评价</a>
 <a class="text-sm font-medium text-gray-300 hover:text-white hover:scale-105 transition-all" href="/#faq">常见问题</a>
 </nav>
@@ -121,6 +122,9 @@
 <a class="flex items-center gap-3 px-4 py-4 rounded-xl bg-white/5 text-base font-bold text-white hover:bg-white/10 transition-colors" href="/#apps" onclick="document.getElementById('mobile-menu').classList.add('hidden')">
 <i class="w-5 h-5 text-green-400" data-lucide="smartphone"></i> APP下载
                 </a>
+<a class="flex items-center gap-3 px-4 py-4 rounded-xl bg-white/5 text-base font-bold text-white hover:bg-white/10 transition-colors" href="/blog/" onclick="document.getElementById('mobile-menu').classList.add('hidden')">
+<i class="w-5 h-5 text-blue-400" data-lucide="book-open"></i> 博客专栏
+                </a>
 <a class="flex items-center gap-3 px-4 py-4 rounded-xl bg-white/5 text-base font-bold text-white hover:bg-white/10 transition-colors" href="/#reviews" onclick="document.getElementById('mobile-menu').classList.add('hidden')">
 <i class="w-5 h-5 text-yellow-400" data-lucide="star"></i> 用户评价
                 </a>
@@ -135,7 +139,7 @@
 </header>
 <main class="pt-32 pb-20 article-glow relative min-h-screen">
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-<nav class="flex mb-8 text-sm text-gray-500">
+<nav aria-label="breadcrumb" class="flex mb-8 text-sm text-gray-500">
 <a class="hover:text-white transition-colors" href="/">首页</a>
 <span class="mx-2">/</span>
 <span class="text-gray-400">Blog</span>

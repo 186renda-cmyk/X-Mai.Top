@@ -85,8 +85,50 @@ def clean_element_links(element, force_root=False):
     for tag in element.find_all(['a', 'link', 'img', 'script']):
         if tag.has_attr('href'):
             tag['href'] = clean_link(tag['href'], force_root)
+            
+            # Auto-add rel attributes for external links and soft routes
+            if tag.name == 'a':
+                href = tag['href']
+                is_external = href.startswith(('http://', 'https://')) and 'x-mai.top' not in href
+                is_soft_route = href.startswith('/go/')
+                
+                if is_external or is_soft_route:
+                    # Get existing rel (ensure it's a list)
+                    rel = tag.get('rel', [])
+                    if isinstance(rel, str):
+                        rel = rel.split()
+                    
+                    # Add required attributes
+                    required = ['nofollow', 'noopener', 'noreferrer']
+                    changed = False
+                    for r in required:
+                        if r not in rel:
+                            rel.append(r)
+                            changed = True
+                            
+                    if changed or not tag.get('rel'):
+                        tag['rel'] = rel
+                        
+                    # Ensure target="_blank" for external links
+                    if is_external and tag.get('target') != '_blank':
+                        tag['target'] = '_blank'
+
         if tag.has_attr('src'):
             tag['src'] = clean_link(tag['src'], force_root)
+
+def fix_breadcrumbs(soup):
+    """Ensure breadcrumb nav has correct aria-label."""
+    # 1. Fix existing with wrong case
+    for nav in soup.find_all('nav', attrs={'aria-label': 'Breadcrumb'}):
+        nav['aria-label'] = 'breadcrumb'
+        
+    # 2. Add to missing
+    # Look for navs that contain "首页" and "Blog" but lack aria-label
+    for nav in soup.find_all('nav'):
+        if not nav.get('aria-label') and not nav.get('id') == 'navbar':
+            text = nav.get_text()
+            if '首页' in text and 'Blog' in text:
+                nav['aria-label'] = 'breadcrumb'
 
 def extract_assets(soup):
     """Extract layout components and brand assets."""
@@ -401,6 +443,40 @@ def update_global_lists(index_soup, articles):
                 '''
                 grid.append(BeautifulSoup(card_html, 'html.parser'))
 
+def inject_blog_index_schema(soup):
+    """Inject Schema for Blog Index."""
+    schema_script = soup.find('script', type="application/ld+json")
+    if schema_script:
+        schema_script.decompose()
+        
+    schema_data = {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": "X-Mai Blog",
+        "description": "X (Twitter) 运营干货与教程",
+        "url": "https://x-mai.top/blog/",
+        "breadcrumb": {
+            "@type": "BreadcrumbList",
+            "itemListElement": [{
+                "@type": "ListItem",
+                "position": 1,
+                "name": "首页",
+                "item": "https://x-mai.top/"
+            },{
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Blog",
+                "item": "https://x-mai.top/blog/"
+            }]
+        }
+    }
+    
+    new_script = soup.new_tag('script', type="application/ld+json")
+    new_script.string = json.dumps(schema_data, ensure_ascii=False, indent=2)
+    
+    if soup.head:
+        soup.head.append(new_script)
+
 def update_blog_index(articles, header, footer, favicons):
     """Update blog/index.html."""
     if not os.path.exists(BLOG_INDEX_PATH):
@@ -419,6 +495,10 @@ def update_blog_index(articles, header, footer, favicons):
     
     # Also clean links in blog/index.html body!
     clean_element_links(soup, force_root=False)
+    
+    # Fix breadcrumbs & Add Schema
+    fix_breadcrumbs(soup)
+    inject_blog_index_schema(soup)
 
     container = soup.find('div', class_=lambda x: x and 'grid-cols-1' in x and 'md:grid-cols-3' in x)
     if container:
@@ -481,6 +561,9 @@ def main():
         
         # Clean links in the article body! (force_root=False to preserve relative context, but strip .html)
         clean_element_links(soup, force_root=False)
+        
+        # Fix breadcrumbs
+        fix_breadcrumbs(soup)
         
         write_file(meta['path'], str(soup))
         

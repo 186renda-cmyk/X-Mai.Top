@@ -177,6 +177,14 @@ class SEOAudit:
         for a in soup.find_all('a', href=True):
             href = a['href']
             
+            # Check Soft Routes (/go/) for rel attributes before skipping
+            if href.startswith('/go/'):
+                rel = a.get('rel', [])
+                if isinstance(rel, str): rel = rel.split()
+                missing = [r for r in ['nofollow', 'noopener', 'noreferrer'] if r not in rel]
+                if missing:
+                    self.add_issue('WARN', f'Soft Route link missing rel attributes ({", ".join(missing)}): {href}', file_info['rel_path'], 2)
+
             # Skip ignored
             if any(href.startswith(p) for p in self.ignore_urls_start):
                 continue
@@ -196,9 +204,11 @@ class SEOAudit:
                     self.external_links[href].append(file_info['rel_path'])
                     # Check rel attributes
                     rel = a.get('rel', [])
-                    if 'noopener' not in rel:
-                        # Minor warning for security/performance
-                        pass 
+                    if isinstance(rel, str): rel = rel.split()
+                    
+                    missing = [r for r in ['nofollow', 'noopener', 'noreferrer'] if r not in rel]
+                    if missing:
+                        self.add_issue('WARN', f'External link missing rel attributes ({", ".join(missing)}): {href}', file_info['rel_path'], 2)
             else:
                 # Internal Links
                 self.check_internal_link(href, file_info)
